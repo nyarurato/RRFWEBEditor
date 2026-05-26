@@ -305,7 +305,8 @@ body {
   margin: 8px 0;
 }
 
-#eol-select {
+#eol-select,
+#lang-select {
   background: var(--select-bg);
   color: var(--select-text);
   border: 1px solid var(--toolbar-border);
@@ -317,7 +318,8 @@ body {
   width: 100%;
 }
 
-#eol-select:focus {
+#eol-select:focus,
+#lang-select:focus {
   border-color: #569cd6;
 }
 

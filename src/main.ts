@@ -5,6 +5,7 @@ import { gcodeFDMLanguage, gcodeCNCLanguage } from '@duet3d/monacotokens';
 import { attachGcodeLinter } from './gcode-linter';
 import { registerDuetProviders } from '@duet3d/monacotokens/dist/providers';
 import { installStaticObjectModelContext } from './objectmodel-context';
+import { type Lang, translations, detectLang } from './i18n';
 
 // Monaco Editor のワーカー設定
 self.MonacoEnvironment = {
@@ -31,18 +32,19 @@ let currentFilename = 'untitled.gcode';
 let isDarkTheme = true;
 let currentMode: GcodeMode = 'gcode-fdm';
 let isModified = false;
+let currentLang: Lang = detectLang();
 
-const SAMPLE_GCODE = `; RRF Web Editor サンプル Gコード
-; RepRapFirmware 向け FDM プリント
+const SAMPLE_GCODE = `; RRF Web Editor - Sample G-code
+; FDM print for RepRapFirmware
 
-M83           ; 相対押出モード
-G28           ; ホーム
-G29           ; オートレベリング
-M190 S60      ; ベッド温度 60°C 待機
-M109 S200     ; ノズル温度 200°C 待機
-G92 E0        ; 押出量リセット
+M83           ; Relative extrusion mode
+G28           ; Home all axes
+G29           ; Auto bed leveling
+M190 S60      ; Wait for bed temperature 60°C
+M109 S200     ; Wait for nozzle temperature 200°C
+G92 E0        ; Reset extruder position
 
-; プリント開始
+; Start printing
 G1 Z0.3 F3000
 G1 X10 Y10 F5000
 G1 X200 Y10 E15 F2000
@@ -52,9 +54,9 @@ G1 X10 Y10 E15
 
 G92 E0
 G1 Z10 F3000
-M104 S0       ; ノズル冷却
-M140 S0       ; ベッド冷却
-M84           ; モーター停止
+M104 S0       ; Turn off nozzle heater
+M140 S0       ; Turn off bed heater
+M84           ; Disable motors
 `;
 
 // ---------------------------------------------------------------------------
@@ -138,12 +140,13 @@ const statusEol = document.getElementById('status-eol')!;
 const filenameDisplay = document.getElementById('filename-display')!;
 
 function updateLangLabel(mode: GcodeMode) {
-  statusLang.textContent = mode === 'gcode-fdm' ? 'G-code (FDM)' : 'G-code (CNC/Laser)';
+  const T = translations[currentLang];
+  statusLang.textContent = mode === 'gcode-fdm' ? T.statusLangFdm : T.statusLangCnc;
 }
 
 editor.onDidChangeCursorPosition((e) => {
   const pos = e.position;
-  statusPosition.textContent = `行 ${pos.lineNumber}, 列 ${pos.column}`;
+  statusPosition.textContent = translations[currentLang].statusLine(pos.lineNumber, pos.column);
 });
 
 editor.onDidChangeCursorSelection((e) => {
@@ -152,7 +155,7 @@ editor.onDidChangeCursorSelection((e) => {
     const lines = sel.endLineNumber - sel.startLineNumber + 1;
     const model = editor.getModel()!;
     const chars = model.getValueInRange(sel).length;
-    statusSelection.textContent = ` | ${lines > 1 ? `${lines}行` : ''}${chars}文字 選択中`;
+    statusSelection.textContent = translations[currentLang].statusSelection(lines, chars);
   } else {
     statusSelection.textContent = '';
   }
@@ -268,13 +271,20 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') settingsPanel.classList.add('hidden');
 });
 
+const langSelect = document.getElementById('lang-select') as HTMLSelectElement;
+
+langSelect.addEventListener('change', () => {
+  currentLang = langSelect.value as Lang;
+  applyTranslations();
+});
+
 // ---------------------------------------------------------------------------
 // New file
 // ---------------------------------------------------------------------------
 const btnNew = document.getElementById('btn-new')!;
 
 btnNew.addEventListener('click', () => {
-  if (isModified && !confirm('変更が保存されていません。新規作成しますか？')) return;
+  if (isModified && !confirm(translations[currentLang].confirmNew)) return;
   editor.setValue('');
   currentFilename = 'untitled.gcode';
   isModified = false;
@@ -288,7 +298,7 @@ const btnOpen = document.getElementById('btn-open')!;
 const fileInput = document.getElementById('file-input') as HTMLInputElement;
 
 btnOpen.addEventListener('click', () => {
-  if (isModified && !confirm('変更が保存されていません。ファイルを開きますか？')) return;
+  if (isModified && !confirm(translations[currentLang].confirmOpen)) return;
   fileInput.click();
 });
 
@@ -393,7 +403,7 @@ editorContainer.addEventListener('drop', (e) => {
   editorContainer.classList.remove('dragover');
   const file = e.dataTransfer?.files[0];
   if (!file) return;
-  if (isModified && !confirm('変更が保存されていません。ファイルを開きますか？')) return;
+  if (isModified && !confirm(translations[currentLang].confirmDrop)) return;
 
   const reader = new FileReader();
   reader.onload = (ev) => {
@@ -417,8 +427,35 @@ installStaticObjectModelContext();
 registerDuetProviders(monaco as Parameters<typeof registerDuetProviders>[0]);
 
 // ---------------------------------------------------------------------------
+// i18n: apply translations to all UI elements
+// ---------------------------------------------------------------------------
+function applyTranslations() {
+  const T = translations[currentLang];
+  document.documentElement.lang = currentLang;
+  btnNew.textContent = T.btnNew;           btnNew.title = T.btnNewTitle;
+  btnOpen.textContent = T.btnOpen;         btnOpen.title = T.btnOpenTitle;
+  btnSave.textContent = T.btnSave;         btnSave.title = T.btnSaveTitle;
+  btnFind.textContent = T.btnFind;         btnFind.title = T.btnFindTitle;
+  btnTheme.textContent = T.btnTheme;       btnTheme.title = T.btnThemeTitle;
+  btnSettings.textContent = T.btnSettings; btnSettings.title = T.btnSettingsTitle;
+  document.getElementById('mode-label')!.textContent = T.modeLabel;
+  settingsPanel.setAttribute('aria-label', T.settingsPanelLabel);
+  document.getElementById('settings-wrap-label')!.textContent = T.wrapLabel;
+  document.getElementById('wrap-enabled-label')!.textContent = T.wrapEnabledLabel;
+  document.getElementById('wrap-column-unit')!.textContent = T.wrapColumnUnit;
+  document.getElementById('settings-indent-label')!.textContent = T.indentLabel;
+  document.getElementById('indent-unit')!.textContent = T.indentUnit;
+  document.getElementById('settings-eol-label')!.textContent = T.eolLabel;
+  document.getElementById('settings-lang-label')!.textContent = T.langLabel;
+  langSelect.value = currentLang;
+  updateLangLabel(currentMode);
+  const pos = editor.getPosition();
+  if (pos) statusPosition.textContent = T.statusLine(pos.lineNumber, pos.column);
+}
+
+// ---------------------------------------------------------------------------
 // Initial state
 // ---------------------------------------------------------------------------
-updateLangLabel(currentMode);
+applyTranslations();
 updateFilenameDisplay();
 editor.focus();

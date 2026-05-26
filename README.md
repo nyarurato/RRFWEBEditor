@@ -17,7 +17,7 @@ It provides RRF-specific syntax highlighting, object model completion, hover doc
 
 ### Online
 
-The editor is published via GitHub Pages and automatically deployed on every push to `main`.
+https://nyarurato.github.io/RRFWEBEditor/
 
 ### Run locally
 

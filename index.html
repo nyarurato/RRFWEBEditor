@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +14,7 @@
         </div>
         <div class="header-center">
           <div class="mode-selector">
-            <label>モード:</label>
+            <label id="mode-label">Mode:</label>
             <select id="mode-select">
               <option value="gcode-fdm">FDM / FFF</option>
               <option value="gcode-cnc">CNC / Laser</option>
@@ -27,45 +27,55 @@
       </header>
 
       <div id="toolbar">
-        <button id="btn-new" title="新規作成 (Ctrl+N)">新規</button>
-        <button id="btn-open" title="ファイルを開く (Ctrl+O)">開く</button>
-        <button id="btn-save" title="ファイルに保存 (Ctrl+S)">保存</button>
+        <button id="btn-new" title="New File (Ctrl+N)">New</button>
+        <button id="btn-open" title="Open File (Ctrl+O)">Open</button>
+        <button id="btn-save" title="Save File (Ctrl+S)">Save</button>
         <div class="toolbar-separator"></div>
-        <button id="btn-find" title="検索/置換 (Ctrl+H)">検索/置換</button>
+        <button id="btn-find" title="Find/Replace (Ctrl+H)">Find/Replace</button>
         <div class="toolbar-separator"></div>
-        <button id="btn-theme" title="テーマ切替">テーマ切替</button>
+        <button id="btn-theme" title="Toggle Theme">Theme</button>
         <div class="toolbar-separator"></div>
-        <button id="btn-settings" title="設定">⚙ 設定</button>
+        <button id="btn-settings" title="Settings">⚙ Settings</button>
       </div>
 
       <!-- Settings panel (hidden by default) -->
-      <div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="エディタ設定">
+      <div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="Editor Settings">
         <div class="settings-section">
-          <div class="settings-label">折り返し</div>
+          <div class="settings-label" id="settings-wrap-label">Word Wrap</div>
           <div class="settings-row">
             <label class="settings-check">
               <input type="checkbox" id="wrap-enabled" />
-              <span>有効</span>
+              <span id="wrap-enabled-label">Enabled</span>
             </label>
             <input type="number" id="wrap-column" value="80" min="20" max="500" step="1" />
-            <span class="settings-unit">列</span>
+            <span class="settings-unit" id="wrap-column-unit">col</span>
           </div>
         </div>
         <div class="settings-divider"></div>
         <div class="settings-section">
-          <div class="settings-label">インデント</div>
+          <div class="settings-label" id="settings-indent-label">Indent</div>
           <div class="settings-row">
             <input type="number" id="indent-size" value="2" min="1" max="8" step="1" />
-            <span class="settings-unit">スペース</span>
+            <span class="settings-unit" id="indent-unit">spaces</span>
           </div>
         </div>
         <div class="settings-divider"></div>
         <div class="settings-section">
-          <div class="settings-label">改行の種類</div>
+          <div class="settings-label" id="settings-eol-label">Line Ending</div>
           <div class="settings-row">
             <select id="eol-select">
               <option value="lf">LF (Unix / macOS)</option>
               <option value="crlf">CRLF (Windows)</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section">
+          <div class="settings-label" id="settings-lang-label">Language</div>
+          <div class="settings-row">
+            <select id="lang-select">
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
             </select>
           </div>
         </div>
