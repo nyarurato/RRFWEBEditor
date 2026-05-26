@@ -121,7 +121,7 @@ const editor = monaco.editor.create(editorContainer, {
   fontSize: 14,
   fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
   lineNumbers: 'on',
-  rulers: [80],
+  rulers: [],
   wordWrap: 'off',
   minimap: { enabled: true },
   scrollBeyondLastLine: false,
@@ -219,7 +219,7 @@ function applyWrapSettings() {
   editor.updateOptions({
     wordWrap: wrapEnabled.checked ? 'wordWrapColumn' : 'off',
     wordWrapColumn: col,
-    rulers: [col],
+    rulers: wrapEnabled.checked ? [col] : [],
   });
 }
 

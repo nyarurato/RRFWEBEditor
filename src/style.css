@@ -69,7 +69,29 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.header-link-btn {
+  font-size: 12px;
+  color: var(--btn-text);
+  text-decoration: none;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0.8;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.header-link-btn:hover {\n  opacity: 1;\n  border-color: rgba(255, 255, 255, 0.55);\n  text-decoration: none;\n}\n\n.header-icon-btn {\n  display: flex;\n  align-items: center;\n  color: var(--btn-text);\n  opacity: 0.7;\n  transition: opacity 0.15s;\n  line-height: 1;\n}\n\n.header-icon-btn:hover {\n  opacity: 1;\n}
+
+body.light-theme .header-link-btn {
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+body.light-theme .header-link-btn:hover {
+  border-color: rgba(0, 0, 0, 0.5);
 }
 
 .app-title {
