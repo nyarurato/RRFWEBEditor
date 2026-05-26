@@ -2,6 +2,9 @@ import './style.css';
 import * as monaco from 'monaco-editor';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import { gcodeFDMLanguage, gcodeCNCLanguage } from '@duet3d/monacotokens';
+import { attachGcodeLinter } from './gcode-linter';
+import { registerDuetProviders } from '@duet3d/monacotokens/dist/providers';
+import { installStaticObjectModelContext } from './objectmodel-context';
 
 // Monaco Editor のワーカー設定
 self.MonacoEnvironment = {
@@ -275,6 +278,17 @@ editorContainer.addEventListener('drop', (e) => {
   };
   reader.readAsText(file, 'UTF-8');
 });
+
+// ---------------------------------------------------------------------------
+// Gcode linter
+// ---------------------------------------------------------------------------
+attachGcodeLinter(editor);
+
+// ---------------------------------------------------------------------------
+// Gcode + object model providers (hover / completion)
+// ---------------------------------------------------------------------------
+installStaticObjectModelContext();
+registerDuetProviders(monaco as Parameters<typeof registerDuetProviders>[0]);
 
 // ---------------------------------------------------------------------------
 // Initial state
