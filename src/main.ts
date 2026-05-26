@@ -360,9 +360,16 @@ btnSave.addEventListener('click', saveFile);
 // Find / Replace
 // ---------------------------------------------------------------------------
 const btnFind = document.getElementById('btn-find')!;
+const btnCommandPalette = document.getElementById('btn-command-palette')!;
 
 btnFind.addEventListener('click', () => {
   editor.trigger('toolbar', 'editor.action.startFindReplaceAction', null);
+});
+
+btnCommandPalette.addEventListener('click', () => {
+  editor.focus();
+  // Delay one tick so the editor regains focus before the palette opens
+  setTimeout(() => editor.trigger('keyboard', 'editor.action.quickCommand', null), 0);
 });
 
 // ---------------------------------------------------------------------------
@@ -439,6 +446,7 @@ function applyTranslations() {
   btnOpen.textContent = T.btnOpen;         btnOpen.title = T.btnOpenTitle;
   btnSave.textContent = T.btnSave;         btnSave.title = T.btnSaveTitle;
   btnFind.textContent = T.btnFind;         btnFind.title = T.btnFindTitle;
+  btnCommandPalette.textContent = T.btnCommandPalette; btnCommandPalette.title = T.btnCommandPaletteTitle;
   btnTheme.textContent = T.btnTheme;       btnTheme.title = T.btnThemeTitle;
   btnSettings.textContent = T.btnSettings; btnSettings.title = T.btnSettingsTitle;
   document.getElementById('mode-label')!.textContent = T.modeLabel;

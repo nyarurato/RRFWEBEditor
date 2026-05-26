@@ -5,6 +5,7 @@ export interface Translations {
   btnOpen: string;        btnOpenTitle: string;
   btnSave: string;        btnSaveTitle: string;
   btnFind: string;        btnFindTitle: string;
+  btnCommandPalette: string; btnCommandPaletteTitle: string;
   btnTheme: string;       btnThemeTitle: string;
   btnSettings: string;    btnSettingsTitle: string;
   modeLabel: string;
@@ -27,6 +28,7 @@ export const translations: Record<Lang, Translations> = {
     btnOpen: 'Open',            btnOpenTitle: 'Open File (Ctrl+O)',
     btnSave: 'Save',            btnSaveTitle: 'Save File (Ctrl+S)',
     btnFind: 'Find/Replace',    btnFindTitle: 'Find/Replace (Ctrl+H)',
+    btnCommandPalette: 'Command Palette', btnCommandPaletteTitle: 'Command Palette (F1)',
     btnTheme: 'Theme',          btnThemeTitle: 'Toggle Theme',
     btnSettings: '⚙ Settings', btnSettingsTitle: 'Settings',
     modeLabel: 'Mode:',
@@ -49,6 +51,7 @@ export const translations: Record<Lang, Translations> = {
     btnOpen: '開く',            btnOpenTitle: 'ファイルを開く (Ctrl+O)',
     btnSave: '保存',            btnSaveTitle: 'ファイルに保存 (Ctrl+S)',
     btnFind: '検索/置換',       btnFindTitle: '検索/置換 (Ctrl+H)',
+    btnCommandPalette: 'コマンドパレット', btnCommandPaletteTitle: 'コマンドパレット (F1)',
     btnTheme: 'テーマ切替',     btnThemeTitle: 'テーマ切替',
     btnSettings: '⚙ 設定',     btnSettingsTitle: '設定',
     modeLabel: 'モード:',
