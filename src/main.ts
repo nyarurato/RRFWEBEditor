@@ -58,6 +58,54 @@ M84           ; モーター停止
 `;
 
 // ---------------------------------------------------------------------------
+// Theme definitions
+// ---------------------------------------------------------------------------
+monaco.editor.defineTheme('gcode-dark', {
+  base: 'vs-dark',
+  inherit: true,
+  rules: [
+    // G/M/T codes and meta-keywords (if / while / set / var …)
+    { token: 'keyword',       foreground: '569CD6' },
+    // { } that opens/closes an expression — purple to signal expression context
+    { token: 'expression',    foreground: 'C586C0' },
+    // object model paths: move.axes[0].position, heat.heaters[0].current …
+    { token: 'variable',      foreground: '4EC9B0' },
+    // user-defined variables: global.<n>, var.<n>, param.<n>
+    { token: 'variable.name', foreground: 'DCDCAA' },
+    // built-in constants: true / false / null / pi / iterations …
+    { token: 'constant',      foreground: '9CDCFE' },
+    { token: 'number',        foreground: 'B5CEA8' },
+    { token: 'number.float',  foreground: 'B5CEA8' },
+    { token: 'number.hex',    foreground: 'B5CEA8' },
+    { token: 'string',        foreground: 'CE9178' },
+    { token: 'comment',       foreground: '6A9955', fontStyle: 'italic' },
+    { token: 'operator',      foreground: 'D4D4D4' },
+    { token: 'invalid',       foreground: 'F44747', fontStyle: 'underline' },
+  ],
+  colors: {},
+});
+
+monaco.editor.defineTheme('gcode-light', {
+  base: 'vs',
+  inherit: true,
+  rules: [
+    { token: 'keyword',       foreground: '0000FF' },
+    { token: 'expression',    foreground: 'AF00DB' },
+    { token: 'variable',      foreground: '267F99' },
+    { token: 'variable.name', foreground: '795E26' },
+    { token: 'constant',      foreground: '0070C1' },
+    { token: 'number',        foreground: '098658' },
+    { token: 'number.float',  foreground: '098658' },
+    { token: 'number.hex',    foreground: '098658' },
+    { token: 'string',        foreground: 'A31515' },
+    { token: 'comment',       foreground: '008000', fontStyle: 'italic' },
+    { token: 'operator',      foreground: '000000' },
+    { token: 'invalid',       foreground: 'CD3131', fontStyle: 'underline' },
+  ],
+  colors: {},
+});
+
+// ---------------------------------------------------------------------------
 // Editor creation
 // ---------------------------------------------------------------------------
 const editorContainer = document.getElementById('editor-container')!;
@@ -65,7 +113,7 @@ const editorContainer = document.getElementById('editor-container')!;
 const editor = monaco.editor.create(editorContainer, {
   value: SAMPLE_GCODE,
   language: currentMode,
-  theme: 'vs-dark',
+  theme: 'gcode-dark',
   fontSize: 14,
   fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
   lineNumbers: 'on',
@@ -74,7 +122,7 @@ const editor = monaco.editor.create(editorContainer, {
   minimap: { enabled: true },
   scrollBeyondLastLine: false,
   automaticLayout: true,
-  tabSize: 4,
+  tabSize: 2,
   insertSpaces: true,
   renderWhitespace: 'boundary',
   bracketPairColorization: { enabled: false },
@@ -86,6 +134,7 @@ const editor = monaco.editor.create(editorContainer, {
 const statusPosition = document.getElementById('status-position')!;
 const statusSelection = document.getElementById('status-selection')!;
 const statusLang = document.getElementById('status-lang')!;
+const statusEol = document.getElementById('status-eol')!;
 const filenameDisplay = document.getElementById('filename-display')!;
 
 function updateLangLabel(mode: GcodeMode) {
@@ -139,8 +188,84 @@ const btnTheme = document.getElementById('btn-theme')!;
 
 btnTheme.addEventListener('click', () => {
   isDarkTheme = !isDarkTheme;
-  monaco.editor.setTheme(isDarkTheme ? 'vs-dark' : 'vs');
+  monaco.editor.setTheme(isDarkTheme ? 'gcode-dark' : 'gcode-light');
   document.body.classList.toggle('light-theme', !isDarkTheme);
+});
+
+// ---------------------------------------------------------------------------
+// Settings panel
+// ---------------------------------------------------------------------------
+const btnSettings = document.getElementById('btn-settings')!;
+const settingsPanel = document.getElementById('settings-panel')!;
+const wrapEnabled = document.getElementById('wrap-enabled') as HTMLInputElement;
+const wrapColumn = document.getElementById('wrap-column') as HTMLInputElement;
+const eolSelect = document.getElementById('eol-select') as HTMLSelectElement;
+const indentSize = document.getElementById('indent-size') as HTMLInputElement;
+
+function applyIndentSettings() {
+  const size = Math.max(1, Math.min(8, parseInt(indentSize.value) || 2));
+  indentSize.value = String(size);
+  editor.getModel()?.updateOptions({ tabSize: size, insertSpaces: true });
+}
+
+function applyWrapSettings() {
+  const col = Math.max(20, Math.min(500, parseInt(wrapColumn.value) || 80));
+  wrapColumn.value = String(col);
+  editor.updateOptions({
+    wordWrap: wrapEnabled.checked ? 'wordWrapColumn' : 'off',
+    wordWrapColumn: col,
+    rulers: [col],
+  });
+}
+
+function updateEolLabel() {
+  const model = editor.getModel();
+  if (!model) return;
+  const eol = model.getEOL();
+  statusEol.textContent = eol === '\r\n' ? 'CRLF' : 'LF';
+  eolSelect.value = eol === '\r\n' ? 'crlf' : 'lf';
+}
+
+wrapEnabled.addEventListener('change', () => {
+  wrapColumn.disabled = false; // always editable (shows ruler even when wrap off)
+  applyWrapSettings();
+});
+
+wrapColumn.addEventListener('change', applyWrapSettings);
+
+indentSize.addEventListener('change', applyIndentSettings);
+
+eolSelect.addEventListener('change', () => {
+  const model = editor.getModel();
+  if (!model) return;
+  model.setEOL(
+    eolSelect.value === 'crlf'
+      ? monaco.editor.EndOfLineSequence.CRLF
+      : monaco.editor.EndOfLineSequence.LF
+  );
+  updateEolLabel();
+});
+
+btnSettings.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (settingsPanel.classList.contains('hidden')) {
+    const rect = btnSettings.getBoundingClientRect();
+    // Anchor to bottom-right of button; clamp so panel stays on screen
+    const panelW = 234;
+    let left = rect.right - panelW;
+    if (left < 4) left = 4;
+    settingsPanel.style.top = `${rect.bottom + 4}px`;
+    settingsPanel.style.left = `${left}px`;
+    settingsPanel.classList.remove('hidden');
+  } else {
+    settingsPanel.classList.add('hidden');
+  }
+});
+
+document.addEventListener('click', () => settingsPanel.classList.add('hidden'));
+settingsPanel.addEventListener('click', (e) => e.stopPropagation());
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') settingsPanel.classList.add('hidden');
 });
 
 // ---------------------------------------------------------------------------
@@ -190,6 +315,7 @@ fileInput.addEventListener('change', () => {
     }
     monaco.editor.setModelLanguage(editor.getModel()!, currentMode);
     updateLangLabel(currentMode);
+    updateEolLabel();
   };
   reader.readAsText(file, 'UTF-8');
 

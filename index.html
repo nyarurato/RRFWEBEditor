@@ -34,6 +34,41 @@
         <button id="btn-find" title="検索/置換 (Ctrl+H)">検索/置換</button>
         <div class="toolbar-separator"></div>
         <button id="btn-theme" title="テーマ切替">テーマ切替</button>
+        <div class="toolbar-separator"></div>
+        <button id="btn-settings" title="設定">⚙ 設定</button>
+      </div>
+
+      <!-- Settings panel (hidden by default) -->
+      <div id="settings-panel" class="settings-panel hidden" role="dialog" aria-label="エディタ設定">
+        <div class="settings-section">
+          <div class="settings-label">折り返し</div>
+          <div class="settings-row">
+            <label class="settings-check">
+              <input type="checkbox" id="wrap-enabled" />
+              <span>有効</span>
+            </label>
+            <input type="number" id="wrap-column" value="80" min="20" max="500" step="1" />
+            <span class="settings-unit">列</span>
+          </div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section">
+          <div class="settings-label">インデント</div>
+          <div class="settings-row">
+            <input type="number" id="indent-size" value="2" min="1" max="8" step="1" />
+            <span class="settings-unit">スペース</span>
+          </div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-section">
+          <div class="settings-label">改行の種類</div>
+          <div class="settings-row">
+            <select id="eol-select">
+              <option value="lf">LF (Unix / macOS)</option>
+              <option value="crlf">CRLF (Windows)</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div id="editor-container"></div>
