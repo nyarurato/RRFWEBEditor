@@ -42,8 +42,8 @@ Static files are output to the `dist/` folder.
 | TypeScript | 6 |
 | Monaco Editor | 0.55 |
 | @duet3d/monacotokens | 3.6 |
-| @duet3d/objectmodel | 3.7.0-alpha |
+| @duet3d/objectmodel | 3.6 |
 
 ## License
 
-See [LICENSE](LICENSE).
+MIT

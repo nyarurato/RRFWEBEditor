@@ -1,5 +1,10 @@
-import ObjectModel from '@duet3d/objectmodel';
+import _OM from '@duet3d/objectmodel';
 import { setMachineContext } from '@duet3d/monacotokens/dist/objectmodel/machine-context';
+
+// CJS interop: Vite maps the entire module.exports as the ESM default.
+// The actual class lives at .default of that object (fallback if already unwrapped).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ObjectModel = ((_OM as any).default ?? _OM) as typeof _OM;
 
 /**
  * Install a static RRF object model context so Monaco's completion providers

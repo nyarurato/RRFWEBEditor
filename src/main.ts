@@ -5,7 +5,7 @@ import { gcodeFDMLanguage, gcodeCNCLanguage } from '@duet3d/monacotokens';
 import { attachGcodeLinter } from './gcode-linter';
 import { registerDuetProviders } from '@duet3d/monacotokens/dist/providers';
 import { installStaticObjectModelContext } from './objectmodel-context';
-import { type Lang, translations, detectLang } from './i18n';
+import { type Lang, translations, loadLang, saveLang } from './i18n';
 
 // Monaco Editor のワーカー設定
 self.MonacoEnvironment = {
@@ -32,7 +32,7 @@ let currentFilename = 'untitled.gcode';
 let isDarkTheme = true;
 let currentMode: GcodeMode = 'gcode-fdm';
 let isModified = false;
-let currentLang: Lang = detectLang();
+let currentLang: Lang = loadLang();
 
 const SAMPLE_GCODE = `; RRF Web Editor - Sample G-code
 ; FDM print for RepRapFirmware
@@ -275,6 +275,7 @@ const langSelect = document.getElementById('lang-select') as HTMLSelectElement;
 
 langSelect.addEventListener('change', () => {
   currentLang = langSelect.value as Lang;
+  saveLang(currentLang);
   applyTranslations();
 });
 

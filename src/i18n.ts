@@ -68,7 +68,20 @@ export const translations: Record<Lang, Translations> = {
   },
 };
 
-/** ブラウザの言語設定から自動検出 */
+/** ブラウザの言語設定から自動検出 (navigator.languages 配列を優先) */
 export function detectLang(): Lang {
-  return navigator.language.startsWith('ja') ? 'ja' : 'en';
+  const langs = [...(navigator.languages ?? []), navigator.language].filter(Boolean);
+  return langs.some((l) => l.startsWith('ja')) ? 'ja' : 'en';
+}
+
+/** localStorage から保存済みの言語を取得。なければ detectLang() を使用 */
+export function loadLang(): Lang {
+  const stored = localStorage.getItem('rrf-lang');
+  if (stored === 'en' || stored === 'ja') return stored;
+  return detectLang();
+}
+
+/** 言語選択を localStorage に保存 */
+export function saveLang(lang: Lang): void {
+  localStorage.setItem('rrf-lang', lang);
 }
