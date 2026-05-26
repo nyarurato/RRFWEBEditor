@@ -27,7 +27,6 @@ export function installStaticObjectModelContext(): void {
     model.move.axes.push({} as never);
     model.move.extruders.push({} as never);
     model.move.keepout.push({} as never);
-    model.move.motionSystems.push({} as never);
     model.move.queue.push({} as never);
 
     // ---- heat sub-collections ----
