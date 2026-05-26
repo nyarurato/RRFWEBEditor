@@ -1,0 +1,205 @@
+/* ========== RRF Web Editor Styles ========== */
+:root {
+  --header-bg: #1e1e2e;
+  --header-text: #cdd6f4;
+  --toolbar-bg: #181825;
+  --toolbar-border: #313244;
+  --btn-bg: #313244;
+  --btn-text: #cdd6f4;
+  --btn-hover: #45475a;
+  --btn-active: #585b70;
+  --statusbar-bg: #1565c0;
+  --statusbar-text: #ffffff;
+  --select-bg: #313244;
+  --select-text: #cdd6f4;
+}
+
+/* Light theme overrides */
+body.light-theme {
+  --header-bg: #f0f0f0;
+  --header-text: #333333;
+  --toolbar-bg: #e8e8e8;
+  --toolbar-border: #cccccc;
+  --btn-bg: #d4d4d4;
+  --btn-text: #333333;
+  --btn-hover: #c0c0c0;
+  --btn-active: #aaaaaa;
+  --statusbar-bg: #007acc;
+  --statusbar-text: #ffffff;
+  --select-bg: #ffffff;
+  --select-text: #333333;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+}
+
+/* ---- Layout ---- */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ---- Header ---- */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 38px;
+  background: var(--header-bg);
+  color: var(--header-text);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.header-left,
+.header-center,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--header-text);
+}
+
+.mode-selector label {
+  opacity: 0.8;
+}
+
+#mode-select {
+  background: var(--select-bg);
+  color: var(--select-text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+#mode-select:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.filename {
+  font-size: 12px;
+  opacity: 0.85;
+  font-family: 'Consolas', monospace;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Toolbar ---- */
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  height: 34px;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+  flex-shrink: 0;
+}
+
+#toolbar button {
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+#toolbar button:hover {
+  background: var(--btn-hover);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+#toolbar button:active {
+  background: var(--btn-active);
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--toolbar-border);
+  margin: 0 2px;
+}
+
+/* ---- Editor container ---- */
+#editor-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+#editor-container.dragover::after {
+  content: 'ファイルをドロップして開く';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  background: rgba(21, 101, 192, 0.6);
+  border: 3px dashed #90caf9;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ---- Status bar ---- */
+#statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  height: 22px;
+  background: var(--statusbar-bg);
+  color: var(--statusbar-text);
+  font-size: 11px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+#status-encoding,
+#status-eol,
+#status-lang {
+  opacity: 0.9;
+  padding: 0 4px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+
