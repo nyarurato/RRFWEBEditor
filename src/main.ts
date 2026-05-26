@@ -30,32 +30,34 @@ type GcodeMode = 'gcode-fdm' | 'gcode-cnc';
 
 let currentFilename = 'untitled.gcode';
 let isDarkTheme = true;
-let currentMode: GcodeMode = 'gcode-fdm';
+let currentMode: GcodeMode = 'gcode-cnc';
 let isModified = false;
 let currentLang: Lang = loadLang();
 
 const SAMPLE_GCODE = `; RRF Web Editor - Sample G-code
-; FDM print for RepRapFirmware
+; CNC milling for RepRapFirmware
 
-M83           ; Relative extrusion mode
+G21           ; Set units to millimeters
+G90           ; Absolute positioning
 G28           ; Home all axes
-G29           ; Auto bed leveling
-M190 S60      ; Wait for bed temperature 60°C
-M109 S200     ; Wait for nozzle temperature 200°C
-G92 E0        ; Reset extruder position
+M3 S10000     ; Start spindle at 10000 RPM
+G4 P2         ; Wait 2 seconds for spindle to spin up
 
-; Start printing
-G1 Z0.3 F3000
-G1 X10 Y10 F5000
-G1 X200 Y10 E15 F2000
-G1 X200 Y200 E15
-G1 X10 Y200 E15
-G1 X10 Y10 E15
+; Move to start position
+G0 Z5
+G0 X0 Y0
 
-G92 E0
-G1 Z10 F3000
-M104 S0       ; Turn off nozzle heater
-M140 S0       ; Turn off bed heater
+; Contour pass
+G1 Z-1 F200   ; Plunge to depth
+G1 X100 F800
+G1 Y100
+G1 X0
+G1 Y0
+
+; Retract and finish
+G0 Z10
+M5            ; Stop spindle
+G0 X0 Y0      ; Return to home
 M84           ; Disable motors
 `;
 
@@ -450,8 +452,8 @@ function applyTranslations() {
   document.getElementById('settings-lang-label')!.textContent = T.langLabel;
   langSelect.value = currentLang;
   updateLangLabel(currentMode);
-  const pos = editor.getPosition();
-  if (pos) statusPosition.textContent = T.statusLine(pos.lineNumber, pos.column);
+  const pos = editor.getPosition() ?? { lineNumber: 1, column: 1 };
+  statusPosition.textContent = T.statusLine(pos.lineNumber, pos.column);
 }
 
 // ---------------------------------------------------------------------------
