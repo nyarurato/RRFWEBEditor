@@ -20,12 +20,46 @@ const COND_EMPTY_RE = /^\s*(if|elif|while)\s*(?:;|$)/i;
 // ③ set コマンドに = がない（set <expr> だけで代入なし）
 const SET_NO_EQ_RE = /^\s*set\s+(\S.*?)(?:\s*;.*)?$/i;
 
+interface LineContext {
+  line: string;
+  code: string;
+  lineNumber: number;
+}
+
+function addMarker(
+  markers: monaco.editor.IMarkerData[],
+  severity: monaco.MarkerSeverity,
+  message: string,
+  lineNumber: number,
+  startColumn: number,
+  endColumn: number
+): void {
+  markers.push({
+    severity,
+    message,
+    startLineNumber: lineNumber,
+    startColumn,
+    endLineNumber: lineNumber,
+    endColumn,
+  });
+}
+
+function stripComment(line: string): string {
+  const semicolon = line.indexOf(';');
+  return semicolon >= 0 ? line.substring(0, semicolon) : line;
+}
+
+function isSkippableLine(line: string): boolean {
+  const trimmed = line.trimStart();
+  return !trimmed || trimmed.startsWith(';');
+}
+
 function checkBraces(
-  code: string,
-  ln: number,
+  ctx: LineContext,
   markers: monaco.editor.IMarkerData[]
 ): void {
   // ① 式ブロック { } の対応チェック
+  const { code, lineNumber } = ctx;
   let depth = 0;
   let openCol = -1;
   for (let i = 0; i < code.length; i++) {
@@ -35,27 +69,110 @@ function checkBraces(
     } else if (code[i] === '}') {
       depth--;
       if (depth < 0) {
-        markers.push({
-          severity: monaco.MarkerSeverity.Error,
-          message: `対応する '{' がない '}' です`,
-          startLineNumber: ln,
-          startColumn: i + 1,
-          endLineNumber: ln,
-          endColumn: i + 2,
-        });
+        addMarker(markers, monaco.MarkerSeverity.Error, `対応する '{' がない '}' です`, lineNumber, i + 1, i + 2);
         depth = 0;
       }
     }
   }
   if (depth > 0) {
-    markers.push({
-      severity: monaco.MarkerSeverity.Error,
-      message: `'{' が閉じられていません。対応する '}' が必要です`,
-      startLineNumber: ln,
-      startColumn: openCol + 1,
-      endLineNumber: ln,
-      endColumn: openCol + 2,
-    });
+    addMarker(
+      markers,
+      monaco.MarkerSeverity.Error,
+      `'{' が閉じられていません。対応する '}' が必要です`,
+      lineNumber,
+      openCol + 1,
+      openCol + 2
+    );
+  }
+}
+
+function checkEmptyCondition(
+  ctx: LineContext,
+  markers: monaco.editor.IMarkerData[]
+): boolean {
+  if (!COND_EMPTY_RE.test(ctx.line)) return false;
+
+  const kwMatch = /^\s*(if|elif|while)/i.exec(ctx.line);
+  if (!kwMatch) return false;
+
+  addMarker(
+    markers,
+    monaco.MarkerSeverity.Error,
+    `'${kwMatch[1].toLowerCase()}' の後に条件式がありません`,
+    ctx.lineNumber,
+    kwMatch.index + 1,
+    kwMatch.index + kwMatch[1].length + 1
+  );
+  return true;
+}
+
+function checkSetAssignment(ctx: LineContext, markers: monaco.editor.IMarkerData[]): void {
+  if (!/^\s*set\b/i.test(ctx.line)) return;
+
+  const setBody = SET_NO_EQ_RE.exec(ctx.line);
+  if (!setBody || setBody[1].includes('=')) return;
+
+  const setIdx = ctx.line.toLowerCase().indexOf('set');
+  addMarker(
+    markers,
+    monaco.MarkerSeverity.Error,
+    `'set' コマンドに代入演算子 '=' がありません（例: set var.x = 1）`,
+    ctx.lineNumber,
+    setIdx + 1,
+    ctx.line.trimEnd().length + 1
+  );
+}
+
+function checkVariableDotNotation(ctx: LineContext, markers: monaco.editor.IMarkerData[]): void {
+  // 行頭の宣言（var/global/const name = ...）の場合は最初のマッチを除外
+  const declMatch = VAR_DECL_RE.exec(ctx.code);
+  const leadingSpaces = ctx.code.length - ctx.code.trimStart().length;
+
+  VAR_NO_DOT_RE.lastIndex = 0;
+  let varMatch: RegExpExecArray | null;
+  while ((varMatch = VAR_NO_DOT_RE.exec(ctx.code)) !== null) {
+    // 行頭の宣言キーワード（var/global/const name = ...）はスキップ
+    if (
+      declMatch &&
+      varMatch.index === leadingSpaces &&
+      varMatch[1].toLowerCase() === declMatch[1].toLowerCase() &&
+      varMatch[2] === declMatch[2]
+    ) {
+      continue;
+    }
+    const kw = varMatch[1].toLowerCase();
+    const nm = varMatch[2];
+    addMarker(
+      markers,
+      monaco.MarkerSeverity.Error,
+      `'${kw} ${nm}' は無効な記法です。変数アクセスには '${kw}.${nm}' のようにドット記法を使用してください`,
+      ctx.lineNumber,
+      varMatch.index + 1,
+      varMatch.index + varMatch[0].length + 1
+    );
+  }
+}
+
+function checkUnknownGmCodes(ctx: LineContext, markers: monaco.editor.IMarkerData[]): void {
+  // G/M コードチェック（メタコマンド行はスキップ）
+  if (META_RE.test(ctx.line)) {
+    return;
+  }
+
+  GM_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = GM_RE.exec(ctx.code)) !== null) {
+    const gmCode = match[1].toUpperCase();
+    if (!findGcode(gmCode)) {
+      addMarker(
+        markers,
+        monaco.MarkerSeverity.Warning,
+        `不明なGコード: ${gmCode}`,
+        ctx.lineNumber,
+        match.index + 1,
+        match.index + match[0].length + 1
+      );
+    }
   }
 }
 
@@ -65,99 +182,31 @@ function lintModel(model: monaco.editor.ITextModel): monaco.editor.IMarkerData[]
 
   for (let ln = 1; ln <= lineCount; ln++) {
     const line = model.getLineContent(ln);
-    const trimmed = line.trimStart();
-
-    // 空行・コメント行はスキップ
-    if (!trimmed || trimmed.startsWith(';')) {
+    if (isSkippableLine(line)) {
       continue;
     }
 
-    // 行末コメントを除去
-    const sc = line.indexOf(';');
-    const code = sc >= 0 ? line.substring(0, sc) : line;
+    const ctx: LineContext = {
+      line,
+      code: stripComment(line),
+      lineNumber: ln,
+    };
 
-    // --- ① 式ブロック { } 対応チェック（全行対象）---
-    checkBraces(code, ln, markers);
+    // --- ① 式ブロック { } 対応チェック（全行対象） ---
+    checkBraces(ctx, markers);
 
     // --- ② if/elif/while の条件なしチェック ---
-    if (COND_EMPTY_RE.test(line)) {
-      const kwMatch = /^\s*(if|elif|while)/i.exec(line)!;
-      markers.push({
-        severity: monaco.MarkerSeverity.Error,
-        message: `'${kwMatch[1].toLowerCase()}' の後に条件式がありません`,
-        startLineNumber: ln,
-        startColumn: kwMatch.index + 1,
-        endLineNumber: ln,
-        endColumn: kwMatch.index + kwMatch[1].length + 1,
-      });
+    if (checkEmptyCondition(ctx, markers)) {
       continue;
     }
 
     // --- ③ set コマンドに = がないチェック ---
-    if (/^\s*set\b/i.test(line)) {
-      const setBody = SET_NO_EQ_RE.exec(line);
-      if (setBody && !setBody[1].includes('=')) {
-        const setIdx = line.toLowerCase().indexOf('set');
-        markers.push({
-          severity: monaco.MarkerSeverity.Error,
-          message: `'set' コマンドに代入演算子 '=' がありません（例: set var.x = 1）`,
-          startLineNumber: ln,
-          startColumn: setIdx + 1,
-          endLineNumber: ln,
-          endColumn: line.trimEnd().length + 1,
-        });
-      }
-    }
+    checkSetAssignment(ctx, markers);
 
-    // --- 変数ドット抜けチェック（全行対象）---
-    // 行頭の宣言（var/global/const name = ...）の場合は最初のマッチを除外
-    const declMatch = VAR_DECL_RE.exec(code);
-    const leadingSpaces = code.length - code.trimStart().length;
+    // --- 変数ドット抜けチェック（全行対象） ---
+    checkVariableDotNotation(ctx, markers);
 
-    VAR_NO_DOT_RE.lastIndex = 0;
-    let varMatch: RegExpExecArray | null;
-    while ((varMatch = VAR_NO_DOT_RE.exec(code)) !== null) {
-      // 行頭の宣言キーワード（var/global/const name = ...）はスキップ
-      if (
-        declMatch &&
-        varMatch.index === leadingSpaces &&
-        varMatch[1].toLowerCase() === declMatch[1].toLowerCase() &&
-        varMatch[2] === declMatch[2]
-      ) {
-        continue;
-      }
-      const kw = varMatch[1].toLowerCase();
-      const nm = varMatch[2];
-      markers.push({
-        severity: monaco.MarkerSeverity.Error,
-        message: `'${kw} ${nm}' は無効な記法です。変数アクセスには '${kw}.${nm}' のようにドット記法を使用してください`,
-        startLineNumber: ln,
-        startColumn: varMatch.index + 1,
-        endLineNumber: ln,
-        endColumn: varMatch.index + varMatch[0].length + 1,
-      });
-    }
-
-    // --- G/M コードチェック（メタコマンド行はスキップ）---
-    if (META_RE.test(line)) {
-      continue;
-    }
-
-    GM_RE.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = GM_RE.exec(code)) !== null) {
-      const gmCode = match[1].toUpperCase();
-      if (!findGcode(gmCode)) {
-        markers.push({
-          severity: monaco.MarkerSeverity.Warning,
-          message: `不明なGコード: ${gmCode}`,
-          startLineNumber: ln,
-          startColumn: match.index + 1,
-          endLineNumber: ln,
-          endColumn: match.index + match[0].length + 1,
-        });
-      }
-    }
+    checkUnknownGmCodes(ctx, markers);
   }
 
   return markers;
